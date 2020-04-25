@@ -45,14 +45,23 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                     tags$a('here',
                                       href="https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html",
                                       target = '_blank'),
-                                  'to learn more'),
+                                  'to learn more.'),
                                
                                 
-                                br(),
+                               
                                
                                 
                                 #helpText("Questions? Contact Kevin Little, Ph.D."),
                                 br(),
+                                
+                                #connection to GitHub repository here
+                                h5('Code available on',
+                                   tags$b('GitHub.'), 
+                                   'Click ',
+                                   tags$a('here',
+                                          href="https://github.com/klittle314/COVID_control_chart_public",
+                                          target = '_blank'),
+                                   'to view and download.'),
                                 
                                 
                                 # author info
@@ -61,13 +70,13 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                     span("Created by "),
                                     a("Kevin Little", href = "mailto:klittle@iecodesign.com"),
 
-                                    span("updated 23 April 2020  12:45pm CDT"),
+                                    span("updated 25 April 2020 8:15am U.S. CDT"),
 
                                     br(), br()
                                 
-                                ),
+                                )
                                 
-                                helpText("We continue to develop this app and intend make the code available on GitHub soon.")
+                               
                             )
                    ),
                    
