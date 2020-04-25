@@ -109,8 +109,7 @@ shinyServer(function(input, output, session) {
         updateSelectInput(
           session = session,
           inputId = 'data_source',
-          choices = c('US state-level NY Times data',
-                      'Country-level ECDC data',
+          choices = c(data_choices,
                       'User-uploaded data'),
           selected = 'User-uploaded data')
 
