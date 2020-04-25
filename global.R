@@ -2,8 +2,6 @@
 # series by Provost et al. March 2020.
 # Drafted by Kevin Little, Ph.D. with help from Mason DeCamillis, Lynda Finn, and Emily Jones
 
-options(timeout = 15)
-
 library(tidyverse)
 library(readxl)
 library(utils)
