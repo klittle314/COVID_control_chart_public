@@ -114,12 +114,13 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                     
                                     h4("Build a control chart by choosing location and adjusting options"),
                                     
+                                    uiOutput('data_warning'),
+                                    
                                     selectInput(
                                       inputId = 'data_source',
                                       label   = h5('Choose data source'),
-                                      choices = c('US state-level NY Times data',
-                                                  'Country-level ECDC data'),
-                                      selected = 'US state-level NY Times data'),
+                                      choices = data_choices,
+                                      selected = data_selected),
                                     
                                     #drop down to select the Site Type
                                     # htmlOutput("selectSiteType"),
@@ -129,8 +130,8 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                     selectInput(
                                         inputId  = 'choose_location',
                                         label    = h5("Choose location"),
-                                        choices  = sort(state_names),
-                                        selected = "New York",
+                                        choices  = location_choices,
+                                        selected = location_selected,
                                         width    = "100%"),
                                     
                                     textAreaInput(

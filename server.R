@@ -10,6 +10,24 @@ shinyServer(function(input, output, session) {
     print('sessionInfo():')
     print(sessionInfo())
     
+    output$data_warning <- renderUI({
+      
+      msg <- NULL
+      
+      if (!('Country-level ECDC data' %in% data_choices)) {
+        msg <- paste0(msg, 'Country-level data not downloaded successfully. ')
+      }
+      
+      if (!('US state-level NY Times data' %in% data_choices)) {
+        msg <- paste0(msg, 'State-level data not downloaded successfully. ')
+      }
+      
+      if (!is.null(msg)) {
+        msg <- paste0(msg, 'This is likely a temporary issue with data sources - please try again later.')
+        h5(msg, style='color: red;')
+      }
+    })
+    
     df_upload <- reactiveVal(value = NULL)
 
     upload_data <- reactive({
