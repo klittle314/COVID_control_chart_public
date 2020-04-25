@@ -18,15 +18,51 @@ defBuffer <- 7
 #defBaseline is the default value of points to use to compute the exponential growth control limits
 defBaseline <- 20
 
+data_choices <- character(0)
+data_selected <- NULL
+location_choices <- character(0)
+location_selected <- NULL
+
 if (!file.exists(data_file_country)) {
-  covid_data <- httr::GET("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", 
-                          authenticate(":", ":", type="ntlm"),
-                          write_disk(data_file_country, overwrite=TRUE))
+  response_country <- try(httr::GET(url = "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv",
+                                    authenticate(':', ':', type='ntlm'),
+                                    config(timeout = 10),
+                                    write_disk(data_file_country, overwrite = TRUE)))
+}
+
+if (file.exists(data_file_country)) {
+  df_country <- read_csv(data_file_country)
+  df_country$dateRep <- as.Date(df_country$dateRep, format = '%d/%m/%Y')
+  country_names <- unique(df_country$countriesAndTerritories)
+  
+  data_choices <- c('Country-level ECDC data', data_choices)
+  data_selected <- 'Country-level ECDC data'
+  location_choices <- sort(country_names)
+  location_selected <- country_names[1]
 }
 
 if (!file.exists(data_file_state)) {
-  download.file(url = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv',
-                destfile = data_file_state)
+  response_state <- try(httr::GET(url = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv',
+                                  authenticate(':', ':', type='ntlm'),
+                                  config(timeout = 10),
+                                  write_disk(data_file_state, overwrite = TRUE)))
+}
+
+if (file.exists(data_file_state)) {
+  df_state <- read_csv(data_file_state)
+  #problems opening the NYT connection 4/4/2020.  Also, native date format is %Y-%m-%d  Manual file manip changes date format.
+  df_state$date <- as.Date(df_state$date,format='%m/%d/%Y')
+  state_names <- unique(df_state$state)
+  #rename state variable to countriesAndTerritories to keep code consistent with nations data set
+  colnames(df_state) <- c('dateRep', 'countriesAndTerritories', 'fips', 'cases', 'cum_deaths')
+  #compute deaths in the state table, reported are cum deaths--have to work by state
+  df_state <- df_state %>%group_by(countriesAndTerritories) %>% 
+    mutate(lag_cum_deaths=lag(cum_deaths)) %>% mutate(deaths= cum_deaths-lag_cum_deaths)
+  
+  data_choices <- c('US state-level NY Times data', data_choices)
+  data_selected <- 'US state-level NY Times data'
+  location_choices <- sort(state_names)
+  location_selected <- 'New York'
 }
 
 # delete old country/state data files that aren't necessary - not a big deal locally,
@@ -40,20 +76,6 @@ data_files <- list.files(
 data_files_remove <- setdiff(data_files, c(data_file_country, data_file_state))
 
 file.remove(data_files_remove)
-
-df_country <- read_csv(data_file_country)
-df_country$dateRep <- as.Date(df_country$dateRep, format = '%d/%m/%Y')
-country_names <- unique(df_country$countriesAndTerritories)
-
-df_state <- read_csv(data_file_state)
-#problems opening the NYT connection 4/4/2020.  Also, native date format is %Y-%m-%d  Manual file manip changes date format.
-df_state$date <- as.Date(df_state$date,format='%m/%d/%Y')
-state_names <- unique(df_state$state)
-#rename state variable to countriesAndTerritories to keep code consistent with nations data set
-colnames(df_state) <- c('dateRep', 'countriesAndTerritories', 'fips', 'cases', 'cum_deaths')
-#compute deaths in the state table, reported are cum deaths--have to work by state
-df_state <- df_state %>%group_by(countriesAndTerritories) %>% 
-              mutate(lag_cum_deaths=lag(cum_deaths)) %>% mutate(deaths= cum_deaths-lag_cum_deaths)
 
 #define messages used in output and to check for conditional branching in calculations and plotting
 use_raw_table_messages <- c('Series too short to create a c-chart',
