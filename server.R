@@ -202,7 +202,7 @@ shinyServer(function(input, output, session) {
       location_use <- input$choose_location
       buffer <- input$buffer
       baseline1 <- input$baseline_n
-      title1 <- paste0(location_use," Daily Reported Deaths")
+      title1 <- paste0(location_use," Daily Reported events")
       caption_use <- control_chart_caption()
       constrain_y_axis <- input$constrain_y_axis
       
@@ -229,7 +229,7 @@ shinyServer(function(input, output, session) {
         
         req(control_chartNEW())
         
-        if(control_chartNEW()$message_out != "No reported deaths") {
+        if(control_chartNEW()$message_out != "No reported events") {
               print(control_chartNEW()$p_out1)
         }
     })
@@ -264,10 +264,10 @@ shinyServer(function(input, output, session) {
         names(df_out) <- c("Date Reported", "Cases","Deaths")
         
       } else if(message_out %in% use_new_expo_table_messages) {
-        df_out <- make_data()$df_exp_fit[,c("dateRep","serial_day","deaths",
+        df_out <- make_data()$df_exp_fit[,c("dateRep","serial_day","events",
                                             "predict","LCL_anti_log","UCL_anti_log")]
-        names(df_out) <- c("Date Reported","Serial Day","Deaths","Predicted Deaths","Lower Limit","Upper Limit")
-        df_out$'Predicted Deaths' <- round(df_out$'Predicted Deaths',0)
+        names(df_out) <- c("Date Reported","Serial Day","events","Predicted events","Lower Limit","Upper Limit")
+        df_out$'Predicted events' <- round(df_out$'Predicted events',0)
         df_out$'Lower Limit' <- round(df_out$'Lower Limit',0)
         df_out$'Upper Limit' <- round(df_out$'Upper Limit',0)
         
@@ -308,7 +308,7 @@ shinyServer(function(input, output, session) {
       
       df_out <- make_computation_table(nobs_raw=nrow(make_data()$df1_X),
                                        nobs_fit=nrow(make_data()$df_exp_fit),
-                                       first_death_date=make_data()$date_cutoffs$first_death,
+                                       first_event_date=make_data()$date_cutoffs$first_event,
                                        c_chart_signal=make_data()$date_cutoffs$c_chart_signal,
                                        lm_fit=make_data()$lm_out,
                                        baseline_fit=min(input$baseline_n,count_rows_fit,na.rm=TRUE))
@@ -329,7 +329,7 @@ shinyServer(function(input, output, session) {
         #require conditional check: if lm object NULL then print message no linear model fitted
         #if lm_object used, then summarize the number of records used, the intercept and slope
         #possibly can show the linear plot on the log scale
-        print("values from fitting a straight line by least squares to log10(deaths)")
+        print("values from fitting a straight line by least squares to log10(events)")
         intercept <- make_data()$lm_out$coefficients[1]
         print(intercept)
         slope <- make_data()$lm_out$coefficients[2]
