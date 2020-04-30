@@ -11,9 +11,9 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                             wellPanel(
                                 tags$style(type="text/css", '#leftPanel { width:200px; float:left;}'),
                                 
-                                tags$blockquote("This project implements a method based on control charts to view phases in daily reported deaths from COVID-19.
+                                tags$blockquote("This project implements a method based on control charts to view phases in daily reported events from COVID-19.
                                 The method was developed by Lloyd Provost, Shannon Provost, Rocco Perla, Gareth Parry, and Kevin Little. The code is R and deploys a user interface using Shiny technology.
-                                The R code transforms a time series of daily reported deaths into charts that distinguish phases of COVID-19 infection for a reporting location like a country, state or city"),
+                                The R code transforms a time series of daily reported events into charts that distinguish phases of COVID-19 infection for a reporting location like a country, state or city"),
                                 tags$hr(),
                                 
                                 tags$p(tags$img(src='example_annotated.jpg', align = "top")),
@@ -70,9 +70,11 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                     span("Created by "),
                                     a("Kevin Little", href = "mailto:klittle@iecodesign.com"),
 
-                                    span("updated 25 April 2020 4:15pm U.S. CDT"),
+                                    span("updated 30 April 2020 4:15pm U.S. CDT"),
 
-                                    br(), br()
+                                    br(), br(),
+                                    
+                                helpText("working to show arbitrary events, not just deaths")
                                 
                                 )
                                 
@@ -92,7 +94,7 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                      br(),
                      helpText('You may include multiple locations in a single file; the locations will appear in the location drop-down box'),
                 
-                     helpText('The current code will not yet handle NA values in the death series.  Zero values are fine.')
+                     helpText('The current code will not yet handle NA values in the event series.  Zero values are fine.')
                      ),
                      
                      
@@ -176,8 +178,8 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                         value   = TRUE),
                                       
                                       #Input date that marks the start of the limit calculations
-                                      dateInput("start_date",label=h5("Custom start date for calculations instead of date of first death"),value=defStartdate),
-                                      helpText(h6("Leave blank to allow the start date to be determined as date of first reported death")),
+                                      dateInput("start_date",label=h5("Custom start date for calculations instead of date of first event"),value=defStartdate),
+                                      helpText(h6("Leave blank to allow the start date to be determined as date of first reported event")),
                                       #helpText(h6("The starting date 2019-12-31 tells the app to use all the available data.")),
                                       helpText(h6("You can choose a date after start of the series to focus the graph and calculations on a shorter date range.")),
                                      
