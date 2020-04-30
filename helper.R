@@ -47,10 +47,13 @@ index_test <- function(x,
 }
 
  
-#function to take data frame, e.g. states df or countries df, a name for the country or state and returns a data 
-#frame with three columns (1 row):  the "Date_of_first_death","date_of_c-chart_signal","shift_rule_signal"
-#Shift rule signal is TRUE or FALSE.  It uses the Provost rule: look for at least 8 deaths before applying the 
-#c-chart rules.
+#function to take data frame, e.g. states df or countries df, a name for the country or state and returns a list:  
+# --date_of_first_event,
+# --date_of_c-chart_signal,
+# --c-chart CL
+# --c-chart UCL
+#It uses the Provost rule: look for at least 8 non zero events before applying the c-chart rules.
+
 find_start_date_Provost <- function(data,
                                     location_name,
                                     start_date=start_date){
@@ -64,33 +67,31 @@ find_start_date_Provost <- function(data,
   #note that this parameter is NOT the same as the baseline parameter chosen by the user
   cc_length <- 20
 
-  if(any(df1_X$deaths >0,na.rm=TRUE)) {
+  if(any(df1_X$events >0,na.rm=TRUE)) {
     
-    dates_of_deaths <- df1_X$dateRep[which(df1_X$deaths>0)]
+    dates_of_events <- df1_X$dateRep[which(df1_X$events>0)]
     
-    dates_of_deaths <- df1_X$dateRep[which(df1_X$deaths>0)]
+    start_date_events <- dates_of_events[1]
     
-    start_date_deaths <- dates_of_deaths[1]
-    
-    #allow the user to start the analysis after the date of first death
+    #allow the user to start the analysis after the date of first event
     if(length(start_date)==0) {
     
-        start_date0 <- start_date_deaths
+        start_date0 <- start_date_events
     
-      } else start_date0 <- as.Date(max(start_date,start_date_deaths, na.rm=TRUE), origin="1970-01-01")
+      } else start_date0 <- as.Date(max(start_date,start_date_events, na.rm=TRUE), origin="1970-01-01")
     
-    df1_X_deaths <- df1_X %>% filter(dateRep >= start_date0)
+    df1_X_events <- df1_X %>% filter(dateRep >= start_date0)
     
-    #Provost rule:   look for records that comprise the first 8 deaths. This is a parameter that could be changed so needs definition.
+    #Provost rule:   look for records that comprise the first 8 events. This is a parameter that could be changed so needs definition.
     #replace_na is from tidyr  https://stackoverflow.com/questions/25576358/calculate-cumsum-while-ignoring-na-values
-    #because if upload a file with NA for deaths, the logic will fail,   Reliance on cumsum function to pull out the accumulated
-    #runs above the central line is also problematic--if NAs are in the death column, cumsum function will not work correctly.
+    #because if upload a file with NA for events, the logic will fail,   Reliance on cumsum function to pull out the accumulated
+    #runs above the central line is also problematic--if NAs are in the event column, cumsum function will not work correctly.
     Provost_start_count <- 8
     Rule_shift_length <- 8
     
     
-    if(any(cumsum(replace_na(df1_X_deaths$deaths,0)) >= Provost_start_count)) {
-      index_Provost <- min(which(cumsum(replace_na(df1_X_deaths$deaths,0)) >= Provost_start_count),na.rm=TRUE)
+    if(any(cumsum(replace_na(df1_X_events$events,0)) >= Provost_start_count)) {
+      index_Provost <- min(which(cumsum(replace_na(df1_X_events$events,0)) >= Provost_start_count),na.rm=TRUE)
       
       #Australia_nudge named in honor of Australia which @4-12-2020 had an initial series length 25 and then c-chart signal at the next record
       Australia_nudge <- 5
@@ -102,7 +103,7 @@ find_start_date_Provost <- function(data,
       stop <- FALSE
       
       while(!stop) {
-        test_series0 <- df1_X_deaths %>% filter(dateRep >= start_date0 & dateRep <= start_date0+i) %>% pull(deaths)
+        test_series0 <- df1_X_events %>% filter(dateRep >= start_date0 & dateRep <= start_date0+i) %>% pull(events)
         
         #fix the limits at cc_length_adjusted if series has that many records
         
@@ -114,13 +115,13 @@ find_start_date_Provost <- function(data,
           x1 <- test_series0 > CL
           
           #https://stackoverflow.com/questions/48551492/count-consecutive-true-values-within-each-block-separately
-          # the next calculation will fail if there are NA values for deaths--the logic test in the 
+          # the next calculation will fail if there are NA values for events--the logic test in the 
           #previous line will return NAs in the logical vector x1 corresponding to NAs in test_series0
           #
           x2 <- ave(x1, cumsum(!x1), FUN = cumsum)
           
         } else {
-          #here we are implicitly restricting the c chart calculations to be no more than cc_length_adjusted records after the first death
+          #here we are implicitly restricting the c chart calculations to be no more than cc_length_adjusted records after the first event
           #if the series is shorter than cc_length_adjusted, just remove the NA values at the bottom of the test_series0 vector
           CL <-mean(test_series0[1:cc_length_adjusted],na.rm=TRUE)
           
@@ -138,17 +139,17 @@ find_start_date_Provost <- function(data,
         if(Rule_1){
           index_start <- which.max(test_series0> C_UCL)
           
-          start_date1 <- df1_X_deaths$dateRep[index_start]
+          start_date1 <- df1_X_events$dateRep[index_start]
           
           stop <- TRUE
           
         } else if(Rule_shift){
           index_start <- which.max(x2)
           
-          start_date1 <- df1_X_deaths$dateRep[index_start]
+          start_date1 <- df1_X_events$dateRep[index_start]
           
           stop <- TRUE
-        } else if(nrow(df1_X_deaths) > i) {
+        } else if(nrow(df1_X_events) > i) {
           #j <- j+1 
           i <- i+1
         } else {
@@ -158,7 +159,7 @@ find_start_date_Provost <- function(data,
           stop <- TRUE
         }
       }
-      #END OF THE LOOP CHECKING THAT THERE ARE RECORDS WITH DEATHS
+      #END OF THE LOOP CHECKING THAT THERE ARE RECORDS WITH events
     } else {
       start_date1 <- NA
       CL <- NA
@@ -173,7 +174,7 @@ find_start_date_Provost <- function(data,
   
   #pass the key dates and C-chart information.  Note that any or all of these objects may be NA
   list(
-    first_death = start_date0,
+    first_event = start_date0,
     c_chart_signal = start_date1,
     CL_out = CL,
     C_UCL_out = C_UCL)
@@ -185,34 +186,34 @@ find_start_date_Provost <- function(data,
 create_stages_Provost <- function(data1,date_cutoffs, baseline){
   data_stages <- list()
  
-  # if date_cutoffs$first_death is NA (no deaths), stage1 is the whole data.frame 
-  first_death_date <- date_cutoffs$first_death
+  # if date_cutoffs$first_event is NA (no events), stage1 is the whole data.frame 
+  first_event_date <- date_cutoffs$first_event
   
-  # if (is.na(first_death_date)) stage1 <- data1
-  # else stage1 <- data1 %>% filter(dateRep < first_death_date)
+  # if (is.na(first_event_date)) stage1 <- data1
+  # else stage1 <- data1 %>% filter(dateRep < first_event_date)
   # 
-  # stage1$stage <- 'Pre-deaths'
+  # stage1$stage <- 'Pre-events'
   # data_stages$stage1 <- stage1
   
-  if(!is.na(first_death_date)) {
-      if(first_death_date > min(data1$dateRep,na.rm=TRUE)) {
-          stage1 <- data1 %>% filter(dateRep < first_death_date)
-          stage1$stage <- 'Pre-deaths'
+  if(!is.na(first_event_date)) {
+      if(first_event_date > min(data1$dateRep,na.rm=TRUE)) {
+          stage1 <- data1 %>% filter(dateRep < first_event_date)
+          stage1$stage <- 'Pre-events'
           data_stages$stage1 <- stage1
       }
   } else {
     stage1 <- data1
     
     if (nrow(stage1) > 0) {
-      stage1$stage <- 'Pre-deaths'
+      stage1$stage <- 'Pre-events'
       data_stages$stage1 <- stage1
     }
   }
   
-  # If there has been a death, stage 2 starts on the day of the first death,
+  # If there has been an event, stage 2 starts on the day of the first event,
   
-  if (!is.na(date_cutoffs$first_death)) {
-    stage2 <- data1 %>% filter(dateRep >= date_cutoffs$first_death)
+  if (!is.na(date_cutoffs$first_event)) {
+    stage2 <- data1 %>% filter(dateRep >= date_cutoffs$first_event)
     
     
     
@@ -221,7 +222,7 @@ create_stages_Provost <- function(data1,date_cutoffs, baseline){
       stage2 <- stage2 %>% filter(dateRep < date_cutoffs$c_chart_signal)
     }
     
-    stage2$stage <- 'Deaths observed before c-chart signal'
+    stage2$stage <- 'events observed before c-chart signal'
     
     data_stages$stage2 <- stage2
     
@@ -229,13 +230,13 @@ create_stages_Provost <- function(data1,date_cutoffs, baseline){
   
  
   # If there has been a c-chart signal observed, stage 3 begins with that date and is at 
-  # least 5 subsequent days with deaths > 0, up to 20 (determined by value of baseline argument).
+  # least 5 subsequent days with events > 0, up to 20 (determined by value of baseline argument).
   min_length_chart <- 5
   
   if(!is.na(date_cutoffs$c_chart_signal)) {
     stage3 <- data1 %>% filter(dateRep >= date_cutoffs$c_chart_signal) 
     
-    stage3_check <- stage3 %>% filter(deaths > 0)
+    stage3_check <- stage3 %>% filter(events > 0)
     
     #stage3_short indicates whether or not there are sufficient records to fit the exponential after the c-chart signal
     stage3_short <- FALSE
@@ -251,10 +252,10 @@ create_stages_Provost <- function(data1,date_cutoffs, baseline){
       # If there has been a c-chart signal observed, and there's enough data after the c-chart signal
       # start plus baseline period, make that stage 4  NEED TO ACCOUNT FOR ZEROS IN STAGE 3
       # because these embedded zeros will be set to NA in the subsequent calculation of linear model
-      # when we take the log10 of deaths.
+      # when we take the log10 of events.
       
-        #count the number of records that have 0 in the death series for stage 3  
-        #count_zeros <- length(stage3$deaths[stage3$deaths==0])
+        #count the number of records that have 0 in the event series for stage 3  
+        #count_zeros <- length(stage3$events[stage3$events==0])
         
         #stage4 <- data1 %>% filter(dateRep >= date_cutoffs$c_chart_signal + baseline + count_zeros)
         stage4 <- data1 %>% filter(dateRep > max(stage3$dateRep))
@@ -282,10 +283,10 @@ create_stages_Provost <- function(data1,date_cutoffs, baseline){
 
 #function to subset master data set by location_name, start_date and pad by buffer_days
 #creates a list of objects:  
-# (1) df1_X: data frame will all raw data starting with record of first day reported death(s), records identified by stages
-# (2) df_exp_fit:  data frame with fitted values from lm of log10(deaths), including a buffer number of records past last data day
-# (3) lm_out:  the linear model fitted to the log10(deaths)
-# (4) date_cutoffs:  a list of the date of first death(s), the date of c chart signal marking start of exp fit series, the center line
+# (1) df1_X: data frame will all raw data starting with record of first day reported event(s), records identified by stages
+# (2) df_exp_fit:  data frame with fitted values from lm of log10(events), including a buffer number of records past last data day
+# (3) lm_out:  the linear model fitted to the log10(events)
+# (4) date_cutoffs:  a list of the date of first event(s), the date of c chart signal marking start of exp fit series, the center line
 #                         of the c-chart (may be NULL) and the UCL of the c-chart (may be NULL)
 make_location_data <- function(data,
                                location_name,
@@ -298,7 +299,7 @@ make_location_data <- function(data,
   data_results_list <- list()
  
   df1_X <- data %>% filter(countriesAndTerritories == location_name) %>% arrange(dateRep)
-  #dates_of_deaths <- df1_X$dateRep[which(df1_X$deaths>0)]
+  #dates_of_events <- df1_X$dateRep[which(df1_X$events>0)]
 
   #initialize two list entries that are conditionally calculated by the rest of the function  Create empty df, not null object!
   #the first df will have 0 rows and the list will have length 0.
@@ -312,24 +313,24 @@ make_location_data <- function(data,
   df1_X <- create_stages_Provost(data=df1_X,date_cutoffs=date_cutoffs,
                          baseline = baseline)
 
-  df1_X$deaths_nudge <- df1_X %>% pull(deaths)
+  df1_X$events_nudge <- df1_X %>% pull(events)
   
-  #filter the data to just the deaths series. Assumes that if there is a name, there is at least one record in the data table.
-  #Need to allow for a series that has only 0 deaths.
-   if(any(df1_X$deaths > 0, na.rm=TRUE)) {  
-      df1_X <- df1_X %>% filter(stage != "Pre-deaths")
+  #filter the data to just the events series. Assumes that if there is a name, there is at least one record in the data table.
+  #Need to allow for a series that has only 0 events.
+   if(any(df1_X$events > 0, na.rm=TRUE)) {  
+      df1_X <- df1_X %>% filter(stage != "Pre-events")
       
       #may not need to rename stage to stage_data--that is legacy of bug fixing on 4-10, stage is a function name.
       names(df1_X)[names(df1_X)=="stage"] <- "stage_data"
       
       data_results_list$df1_X <- df1_X
       
-      #if there are data in stage 2, then we will plot those data in run chart if <= 8 deaths and no control chart signal
+      #if there are data in stage 2, then we will plot those data in run chart if <= 8 events and no control chart signal
       #if there are data in stage 3, we need to calculate the information
       #check if any embedded zeros in stage 3:  we will convert zero to NA on supposition that a zero in this phase represents missing data
-      #create a new variable deaths_nudge to represent the adjusted death series
+      #create a new variable events_nudge to represent the adjusted event series
       ################# Allow over-ride of the calculated start_date by the user chosen start_date.#################
-      #exp_fit_min_length is the shortest number of records to use for the log of deaths and linear fit
+      #exp_fit_min_length is the shortest number of records to use for the log of events and linear fit
       exp_fit_min_length <- 5
       
       
@@ -340,24 +341,24 @@ make_location_data <- function(data,
           #check for sufficient stage 3 values to calculate the exponential growth control limits
           
           if(nrow(df1_X_exp_fit)>= exp_fit_min_length) {
-                #replace any deaths_nudge value = 0 with NA
-                df1_X_exp_fit$deaths_nudge <- unlist(lapply(df1_X_exp_fit$deaths_nudge,zero_NA))
+                #replace any events_nudge value = 0 with NA
+                df1_X_exp_fit$events_nudge <- unlist(lapply(df1_X_exp_fit$events_nudge,zero_NA))
                 
-                df1_X_exp_fit$log_10_deaths <- log10(df1_X_exp_fit$deaths_nudge)
+                df1_X_exp_fit$log_10_events <- log10(df1_X_exp_fit$events_nudge)
                 
                 df1_X_exp_fit$serial_day <- c(1:nrow(df1_X_exp_fit))
                 
                 #allow the use of a different baseline, user defined input
                 df1_X_exp_fit <- df1_X_exp_fit %>% filter(serial_day <= baseline)
                 
-                lm_out <- lm(data=df1_X_exp_fit,df1_X_exp_fit$log_10_deaths ~ df1_X_exp_fit$serial_day)
+                lm_out <- lm(data=df1_X_exp_fit,df1_X_exp_fit$log_10_events ~ df1_X_exp_fit$serial_day)
                 
                 data_results_list$lm_out <- lm_out
                 
                 #update the df1_X component of the output list?  Leave any 0 value in the df?
                 
                 #should make a prediction for the NA values-- find the value and insert
-                cchart_df <- data.frame(df1_X_exp_fit[!is.na(df1_X_exp_fit$log_10_deaths),c("dateRep","serial_day","deaths","log_10_deaths")],
+                cchart_df <- data.frame(df1_X_exp_fit[!is.na(df1_X_exp_fit$log_10_events),c("dateRep","serial_day","events","log_10_events")],
                                         lm_out$residuals,c(NA,diff(lm_out$residuals)),lm_out$fitted.values)
                 
                 names(cchart_df)[5] <- "differences"
@@ -370,7 +371,7 @@ make_location_data <- function(data,
                 
                 cchart_df$LCL <- lm_out$fitted.values - 3.14*MedMR
                 
-                cchart_df$stage_data <- df1_X_exp_fit[!is.na(df1_X_exp_fit$log_10_deaths),] %>% pull(stage_data)
+                cchart_df$stage_data <- df1_X_exp_fit[!is.na(df1_X_exp_fit$log_10_events),] %>% pull(stage_data)
                 
                 df_exp_fit <- cchart_df
                 
@@ -385,16 +386,16 @@ make_location_data <- function(data,
                  
                  df1_X_post_fit$serial_day <- seq(from=start_index, length.out=nrows_post_fit,by=1)
                  
-                 #I should check for reported 0 deaths in this epoch just like in stage 3
-                 df1_X_post_fit$deaths_nudge <- unlist(lapply(df1_X_post_fit$deaths_nudge,zero_NA))
+                 #I should check for reported 0 events in this epoch just like in stage 3
+                 df1_X_post_fit$events_nudge <- unlist(lapply(df1_X_post_fit$events_nudge,zero_NA))
                  
-                 df1_X_post_fit$log_10_deaths <- log10(df1_X_post_fit$deaths_nudge)
+                 df1_X_post_fit$log_10_events <- log10(df1_X_post_fit$events_nudge)
                  
                  check_predicted_value <- lm_out$coefficients[1]+ lm_out$coefficients[2]*df1_X_post_fit$serial_day
                  
                  stage_data <- df1_X_post_fit %>% pull(stage_data)
                  
-                 df_post_fit_out <- cbind.data.frame(df1_X_post_fit[,c("dateRep","serial_day","deaths","log_10_deaths")],
+                 df_post_fit_out <- cbind.data.frame(df1_X_post_fit[,c("dateRep","serial_day","events","log_10_events")],
                                                   rep(NA,nrows_post_fit),
                                                   rep(NA,nrows_post_fit),
                                                   check_predicted_value,
@@ -448,7 +449,7 @@ make_location_data <- function(data,
   return(data_results_list)
 }
 
-#this function makes the exponential chart, the log10 chart, the c-chart and death chart, along
+#this function makes the exponential chart, the log10 chart, the c-chart and event chart, along
 #with descriptive message
 #requires location name, buffer days, a list of data objects that is output from function make_location_dat
 #title for charts and caption for main display
@@ -462,14 +463,14 @@ make_charts <- function(location_use,
   df_no_fit <- make_data$df1_X
   df_fit <- make_data$df_exp_fit
   lm_fit <- make_data$lm_out
-  first_death_date <- make_data$date_cutoffs$first_death
+  first_event_date <- make_data$date_cutoffs$first_event
   exp_growth_date <- make_data$date_cutoffs$c_chart_signal
   c_chart_CL <- make_data$date_cutoffs$CL_out
   c_chart_UCL <- make_data$date_cutoffs$C_UCL_out
 
  
   #Here is the outline of the conditional logic that follows:
-  #    if(no deaths)
+  #    if(no events)
   #         {create empty graph lists}
   #    else if (no c-chart signal)
   #          if(too few points for c-chart)
@@ -484,21 +485,21 @@ make_charts <- function(location_use,
   #           else #we can fit the exponential and overlay c-chart
   #             {make exponential charts}
   
-  if(is.na(first_death_date)) {
+  if(is.na(first_event_date)) {
     p_out1 <- list()
     
     p_out2 <- list()
     
-    message_out <- "No reported deaths"
+    message_out <- "No reported events"
     
   } else if(is.na(exp_growth_date)) { #if there is no exponential growth, define plots we can make
     
-    index_Provost <- min(which(cumsum(replace_na(df_no_fit$deaths,0)) >=8),na.rm=TRUE)
+    index_Provost <- min(which(cumsum(replace_na(df_no_fit$events,0)) >=8),na.rm=TRUE)
   
         if(nrow(df_no_fit) < index_Provost) {
           #p_out1 is simple plot of points in time order, p_out2 is empty list
           p_out1 <- ggplot(data=df_no_fit,
-                           aes(x=dateRep,y=deaths))+
+                           aes(x=dateRep,y=events))+
             theme_bw()+
             geom_point(size=rel(2.5))+
             labs(title = title1)+
@@ -509,7 +510,7 @@ make_charts <- function(location_use,
             #theme(axis.title.y=element_text(size=rel(1),angle=0,vjust=0.5))+
             theme(axis.text.y=element_text(size=rel(1.5)))+
             theme(axis.text.x=element_text(size=rel(1.5)))+
-            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$deaths,na.rm=TRUE)))
+            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$events,na.rm=TRUE)))
             
             
           
@@ -518,7 +519,7 @@ make_charts <- function(location_use,
           message_out <- "Series too short to create a c-chart"
       
         } else  {p_out1 <- ggplot(data=df_no_fit,
-                                  aes(x=dateRep,y=deaths))+
+                                  aes(x=dateRep,y=events))+
                             theme_bw()+
                             geom_point(size=rel(3.0))+
                             geom_line()+
@@ -534,7 +535,7 @@ make_charts <- function(location_use,
                             theme(axis.text.x=element_text(size=rel(1.5)))+
                             geom_hline(yintercept=c_chart_CL)+
                             geom_hline(yintercept=c_chart_UCL,linetype="dashed")+
-                            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$deaths,na.rm=TRUE)))
+                            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$events,na.rm=TRUE)))
                             
         
                 p_out2 <- list()
@@ -542,9 +543,9 @@ make_charts <- function(location_use,
                 message_out <- "c-chart only"
         }
   }  else if(nrow(df_fit)==0) {
-    #now plot c chart with extra points df_fit needs a minimum of five records with non-zero deaths
+    #now plot c chart with extra points df_fit needs a minimum of five records with non-zero events
           p_out1 <- ggplot(data=df_no_fit,
-                           aes(x=dateRep,y=deaths,shape=stage_data))+
+                           aes(x=dateRep,y=events,shape=stage_data))+
             theme_bw()+
             geom_point(size=rel(3.0))+
             geom_line()+
@@ -561,7 +562,7 @@ make_charts <- function(location_use,
             #theme(axis.title.y=element_text(size=rel(1),angle=0,vjust=0.5))+
             theme(axis.text.y=element_text(size=rel(1.5)))+
             theme(axis.text.x=element_text(size=rel(1.5)))+
-            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$deaths,na.rm=TRUE)))+
+            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$events,na.rm=TRUE)))+
             theme(legend.position = c(0.05, 0.95),
                   legend.justification = c("left", "top"))
           
@@ -575,12 +576,12 @@ make_charts <- function(location_use,
       #alternatively, compute 95% confidence interval and require CI for slope to have lower point > 0
       # conf_int_slope <- confint(lm_fit,'df1_X_exp_fit$serial_day',level= 0.95)[1]
       p_out1 <- ggplot(data=df_no_fit,
-                         aes(x=dateRep,y=deaths))+
+                         aes(x=dateRep,y=events))+
                 theme_bw()+
                 geom_point(size=rel(3.0))+
                 geom_line()+
                 labs(title = title1,
-                     subtitle = "c-chart center line (solid) and upper limit (dashed);daily deaths after first special cause signal do not show exponential growth",
+                     subtitle = "c-chart center line (solid) and upper limit (dashed);daily events after first special cause signal do not show exponential growth",
                      caption = caption_use)+
                 theme(plot.title=element_text(size=rel(1.5)))+
                 #theme(axis.title.y=element_text(size=rel(1),angle=0,vjust=0.5))+
@@ -591,7 +592,7 @@ make_charts <- function(location_use,
                 theme(axis.text.x=element_text(size=rel(1.5)))+
                 geom_hline(yintercept=c_chart_CL)+
                 geom_hline(yintercept=c_chart_UCL,linetype="dashed")+
-                scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$deaths,na.rm=TRUE)))
+                scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$events,na.rm=TRUE)))
                 
           
           p_out2 <- list()
@@ -600,7 +601,7 @@ make_charts <- function(location_use,
           
   } else {
         #exponential plots
-        p0 <- ggplot(data=df_fit,aes(x=dateRep,y=deaths,shape=stage_data))+
+        p0 <- ggplot(data=df_fit,aes(x=dateRep,y=events,shape=stage_data))+
           theme_bw()+
           geom_point(size=rel(3.0),colour="blue")+
           geom_line()+
@@ -609,7 +610,7 @@ make_charts <- function(location_use,
                shape = "Data stage") +
           xlab("")+
           ylab("")+
-          #ylab("Deaths per day")+
+          #ylab("events per day")+
           # xlim(min(df_fit$dateRep),max(df_fit$dateRep)+buffer)+
           theme(axis.text.x=element_text(size=rel(1.5)))+
           theme(axis.text.y=element_text(size=rel(1.5)))+
@@ -633,7 +634,7 @@ make_charts <- function(location_use,
         end_date <- exp_growth_date - 1
         
         p_out1 <- p_out + geom_point(data=df_no_fit[df_no_fit$dateRep < exp_growth_date,],
-                                     aes(x=dateRep,y=deaths,shape=stage_data))+
+                                     aes(x=dateRep,y=events,shape=stage_data))+
           geom_segment(aes(x=start_date, xend=end_date, y=c_chart_CL, yend=c_chart_CL))+
           geom_segment(aes(x=start_date, xend=end_date, y=c_chart_UCL, yend=c_chart_UCL),linetype="dashed")+
           xlim(min(df_no_fit$dateRep),max(df_fit$dateRep))+
@@ -644,14 +645,14 @@ make_charts <- function(location_use,
         
         if (constrain_y_axis) {
           p_out1 <- p_out1 + scale_y_continuous(
-            limits = c(0, 2*max(df_fit$deaths, na.rm = TRUE))
+            limits = c(0, 2*max(df_fit$events, na.rm = TRUE))
           )
         }   
         
         #retrict to the values used in the linear fit to plot the log chart
         #df_cchart1 <- df_cchart %>% filter(serial_day <= baseline1)
         
-        p_out2 <- ggplot(data=df_fit,aes(x=dateRep,y=log_10_deaths,shape=stage_data))+
+        p_out2 <- ggplot(data=df_fit,aes(x=dateRep,y=log_10_events,shape=stage_data))+
           theme_bw()+
           
           geom_line(data=df_fit,aes(x=dateRep,y=lm_out.fitted.values))+
@@ -660,7 +661,7 @@ make_charts <- function(location_use,
         
           geom_point(size=rel(2.5),colour="blue")+
           geom_line()+
-          labs(title = paste0(location_use," log10 Daily Reported Deaths"),
+          labs(title = paste0(location_use," log10 Daily Reported events"),
                subtitle = "Limits based on Individuals Shewhart chart calculations using regression residuals",
                shape = "Data stage")+
           ylab("")+
@@ -683,7 +684,7 @@ make_charts <- function(location_use,
 #create the computation table
 make_computation_table <- function(nobs_raw,
                                    nobs_fit,
-                                   first_death_date,
+                                   first_event_date,
                                    c_chart_signal,
                                    lm_fit,
                                    baseline_fit)
@@ -695,36 +696,36 @@ make_computation_table <- function(nobs_raw,
     intercept <- NA
     slope <- NA
     lower_conf_value <- NA
-    doubling_daily_deaths <- NA
+    doubling_daily_events <- NA
   } else {
     intercept <- lm_fit$coefficient[1]
     slope <- lm_fit$coefficient[2]
     if(lm_fit$coefficient[2] > 0) {
-          doubling_daily_deaths <- log10(2)/lm_fit$coefficient[2]
-    } else doubling_daily_deaths <- NA
+          doubling_daily_events <- log10(2)/lm_fit$coefficient[2]
+    } else doubling_daily_events <- NA
     lower_conf_value <- confint(lm_fit,'df1_X_exp_fit$serial_day')[1]
   }
   #use the caption argument to title the table
   #caption = 'Table 1: This is a simple caption for the table.'
   
 
-  parameter_names <- c("Observations since first reported death",
-                       "Date of first reported death",
+  parameter_names <- c("Observations since first reported event",
+                       "Date of first reported event",
                        "Date of c-chart signal",
                        "Number of records used to fit the regression",
-                       "Slope of log10 deaths vs day",
-                       "Intercept of log10 deaths vs day",
-                       "Days to double daily reported deaths, exponential phase",
+                       "Slope of log10 events vs day",
+                       "Intercept of log10 events vs day",
+                       "Days to double daily reported events, exponential phase",
                        "Lower limit of 95% CI for slope"
   )
   
   parameter_values <- c(as.character(nobs_raw),
-                        as.character(first_death_date),
+                        as.character(first_event_date),
                         as.character(c_chart_signal),
                         as.character(baseline_fit),
                         as.character(round(slope,3)),
                         as.character(round(intercept,3)),
-                        as.character(round(doubling_daily_deaths,1)),
+                        as.character(round(doubling_daily_events,1)),
                         as.character(round(lower_conf_value,3)))
   
   df_out <- cbind.data.frame(parameter_names, parameter_values)
