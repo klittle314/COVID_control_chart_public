@@ -30,6 +30,13 @@ integer_breaks <- function(n = 5, ...) {
   return(fxn)
 }
 
+# A function to set up the differenced case and death series from the NYTimes:  take first record from cum 
+# variable as first record in the differenced series.
+make_vec <- function(x) {
+  x_out <- x -lag(x)
+  x_out[1] <- x[1]
+  return(x_out)
+}
 
 #function to find index that marks first sequence of length_use values.  Default length = 8 per Lloyd Provost 30 March 2020 
 index_test <- function(x,
