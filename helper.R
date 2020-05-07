@@ -68,7 +68,7 @@ find_start_date_Provost <- function(data,
     
     dates_of_deaths <- df1_X$dateRep[which(df1_X$deaths>0)]
     
-    dates_of_deaths <- df1_X$dateRep[which(df1_X$deaths>0)]
+    #dates_of_deaths <- df1_X$dateRep[which(df1_X$deaths>0)]
     
     start_date_deaths <- dates_of_deaths[1]
     
