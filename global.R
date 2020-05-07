@@ -54,10 +54,13 @@ if (file.exists(data_file_state)) {
   df_state$date <- as.Date(df_state$date,format='%m/%d/%Y')
   state_names <- unique(df_state$state)
   #rename state variable to countriesAndTerritories to keep code consistent with nations data set
-  colnames(df_state) <- c('dateRep', 'countriesAndTerritories', 'fips', 'cases', 'cum_deaths')
+  colnames(df_state) <- c('dateRep', 'countriesAndTerritories', 'fips', 'cum_cases', 'cum_deaths')
   #compute deaths in the state table, reported are cum deaths--have to work by state
   df_state <- df_state %>%group_by(countriesAndTerritories) %>% 
-    mutate(lag_cum_deaths=lag(cum_deaths)) %>% mutate(deaths= cum_deaths-lag_cum_deaths)
+    mutate(deaths= make_vec(cum_deaths)
+           
+  df_state <- df_state %>%group_by(countriesAndTerritories) %>% 
+             mutate(cases= make_vec(cum_cases)
   
   data_choices <- c('US state-level NY Times data', data_choices)
   data_selected <- 'US state-level NY Times data'
