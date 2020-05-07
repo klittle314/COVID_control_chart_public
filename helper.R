@@ -19,6 +19,14 @@ zero_NA <- function(x){
 }
 
 
+# A function to build the differenced series correctly from the NYTimes:  insert the first record
+# from the cumulative cases or deaths as the first record in the differenced series.
+make_vec <- function(x) {
+  x_out <- x -lag(x)
+  x_out[1] <- x[1]
+  return(x_out)
+}
+
 # A function factory for getting integer y-axis values.
 # from: https://joshuacook.netlify.com/post/integer-values-ggplot-axis/
 integer_breaks <- function(n = 5, ...) {
