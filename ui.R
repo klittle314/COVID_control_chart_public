@@ -88,14 +88,14 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                      
                      tags$ul(
                        tags$li('date (MM/DD/YYYY format)'),
-                       tags$li('cases'),
-                       tags$li('deaths'),
-                       tags$li('location'),
+                       tags$li('location')),
+                     
+                     h4('Then add as many numeric columns as you wish. Include column names in the first row, and use underscores (_) to separate words in names (e.g. "icu_patients").'),
+                     
                      br(),
                      helpText('You may include multiple locations in a single file; the locations will appear in the location drop-down box'),
                 
-                     helpText('The current code will not yet handle NA values in the event series.  Zero values are fine.')
-                     ),
+                     helpText('The current code will not yet handle NA values in the event series.  Zero values are fine.'),
                      
                      
                      h5('Click',
@@ -132,6 +132,12 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                       label   = h5('Choose data source'),
                                       choices = data_choices,
                                       selected = data_selected),
+                                    
+                                    selectInput(
+                                      inputId = 'event_name',
+                                      label   = h5('Choose event column'),
+                                      choices = NULL,
+                                      selected = NULL),
                                     
                                     #drop down to select the Site Type
                                     # htmlOutput("selectSiteType"),

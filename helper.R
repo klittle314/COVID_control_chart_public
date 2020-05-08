@@ -62,9 +62,9 @@ index_test <- function(x,
 #It uses the Provost rule: look for at least 8 non zero events before applying the c-chart rules.
 
 find_start_date_Provost <- function(data,
+                                    event_name,
                                     location_name,
                                     start_date=start_date){
- 
  
   df1_X <- data %>% filter(countriesAndTerritories == location_name) %>% arrange(dateRep)
   
@@ -74,9 +74,9 @@ find_start_date_Provost <- function(data,
   #note that this parameter is NOT the same as the baseline parameter chosen by the user
   cc_length <- 20
 
-  if(any(df1_X$events >0,na.rm=TRUE)) {
+  if(any(df1_X[[event_name]] > 0,na.rm=TRUE)) {
     
-    dates_of_events <- df1_X$dateRep[which(df1_X$events>0)]
+    dates_of_events <- df1_X$dateRep[which(df1_X[[event_name]] > 0)]
     
     start_date_events <- dates_of_events[1]
     
@@ -97,8 +97,8 @@ find_start_date_Provost <- function(data,
     Rule_shift_length <- 8
     
     
-    if(any(cumsum(replace_na(df1_X_events$events,0)) >= Provost_start_count)) {
-      index_Provost <- min(which(cumsum(replace_na(df1_X_events$events,0)) >= Provost_start_count),na.rm=TRUE)
+    if(any(cumsum(replace_na(df1_X_events[[event_name]], 0)) >= Provost_start_count)) {
+      index_Provost <- min(which(cumsum(replace_na(df1_X_events[[event_name]], 0)) >= Provost_start_count),na.rm=TRUE)
       
       #Australia_nudge named in honor of Australia which @4-12-2020 had an initial series length 25 and then c-chart signal at the next record
       Australia_nudge <- 5
@@ -110,7 +110,7 @@ find_start_date_Provost <- function(data,
       stop <- FALSE
       
       while(!stop) {
-        test_series0 <- df1_X_events %>% filter(dateRep >= start_date0 & dateRep <= start_date0+i) %>% pull(events)
+        test_series0 <- df1_X_events %>% filter(dateRep >= start_date0 & dateRep <= start_date0+i) %>% pull(!!event_name)
         
         #fix the limits at cc_length_adjusted if series has that many records
         
@@ -190,7 +190,7 @@ find_start_date_Provost <- function(data,
 
 
 #new function to label stages, MDEC created 4-7-2020 and modified to accept Provost starting rule
-create_stages_Provost <- function(data1,date_cutoffs, baseline){
+create_stages_Provost <- function(data1, event_name, date_cutoffs, baseline){
   data_stages <- list()
  
   # if date_cutoffs$first_event is NA (no events), stage1 is the whole data.frame 
@@ -205,14 +205,14 @@ create_stages_Provost <- function(data1,date_cutoffs, baseline){
   if(!is.na(first_event_date)) {
       if(first_event_date > min(data1$dateRep,na.rm=TRUE)) {
           stage1 <- data1 %>% filter(dateRep < first_event_date)
-          stage1$stage <- 'Pre-events'
+          stage1$stage <- paste0('Pre-', event_name)
           data_stages$stage1 <- stage1
       }
   } else {
     stage1 <- data1
     
     if (nrow(stage1) > 0) {
-      stage1$stage <- 'Pre-events'
+      stage1$stage <- paste0('Pre-', event_name)
       data_stages$stage1 <- stage1
     }
   }
@@ -229,7 +229,7 @@ create_stages_Provost <- function(data1,date_cutoffs, baseline){
       stage2 <- stage2 %>% filter(dateRep < date_cutoffs$c_chart_signal)
     }
     
-    stage2$stage <- 'events observed before c-chart signal'
+    stage2$stage <- paste0(event_name, ' observed before c-chart signal')
     
     data_stages$stage2 <- stage2
     
@@ -243,7 +243,7 @@ create_stages_Provost <- function(data1,date_cutoffs, baseline){
   if(!is.na(date_cutoffs$c_chart_signal)) {
     stage3 <- data1 %>% filter(dateRep >= date_cutoffs$c_chart_signal) 
     
-    stage3_check <- stage3 %>% filter(events > 0)
+    stage3_check <- stage3 %>% filter(!!event_name > 0)
     
     #stage3_short indicates whether or not there are sufficient records to fit the exponential after the c-chart signal
     stage3_short <- FALSE
@@ -296,10 +296,13 @@ create_stages_Provost <- function(data1,date_cutoffs, baseline){
 # (4) date_cutoffs:  a list of the date of first event(s), the date of c chart signal marking start of exp fit series, the center line
 #                         of the c-chart (may be NULL) and the UCL of the c-chart (may be NULL)
 make_location_data <- function(data,
+                               event_name,
                                location_name,
                                buffer_days,
                                baseline,
                                start_date){
+  
+  log_10_events <- paste0('log_10_', event_name)
  
   #create an object that will have data frames, dates of stages and the linear model fit
   #I can create data frames with 0 rows and dates of stages with NA values.   What about a 'null' linear model?
@@ -312,20 +315,22 @@ make_location_data <- function(data,
   #the first df will have 0 rows and the list will have length 0.
   data_results_list$df_exp_fit <- data.frame()
   data_results_list$lm_out <- list()
-  
-  date_cutoffs <- find_start_date_Provost(data = df1_X, location_name = location_name, start_date = start_date)
+
+  date_cutoffs <- find_start_date_Provost(data = df1_X, event_name = event_name, location_name = location_name, start_date = start_date)
   
   data_results_list$date_cutoffs <- date_cutoffs
    
-  df1_X <- create_stages_Provost(data=df1_X,date_cutoffs=date_cutoffs,
-                         baseline = baseline)
+  df1_X <- create_stages_Provost(data=df1_X,
+                                 event_name = event_name,
+                                 date_cutoffs=date_cutoffs,
+                                 baseline = baseline)
 
-  df1_X$events_nudge <- df1_X %>% pull(events)
+  df1_X$events_nudge <- df1_X %>% pull(!!event_name)
   
   #filter the data to just the events series. Assumes that if there is a name, there is at least one record in the data table.
   #Need to allow for a series that has only 0 events.
-   if(any(df1_X$events > 0, na.rm=TRUE)) {  
-      df1_X <- df1_X %>% filter(stage != "Pre-events")
+   if(any(df1_X[[event_name]] > 0, na.rm=TRUE)) {  
+      df1_X <- df1_X %>% filter(stage != paste0("Pre-", event_name))
       
       #may not need to rename stage to stage_data--that is legacy of bug fixing on 4-10, stage is a function name.
       names(df1_X)[names(df1_X)=="stage"] <- "stage_data"
@@ -351,21 +356,22 @@ make_location_data <- function(data,
                 #replace any events_nudge value = 0 with NA
                 df1_X_exp_fit$events_nudge <- unlist(lapply(df1_X_exp_fit$events_nudge,zero_NA))
                 
-                df1_X_exp_fit$log_10_events <- log10(df1_X_exp_fit$events_nudge)
+                df1_X_exp_fit[[log_10_events]] <- log10(df1_X_exp_fit$events_nudge)
                 
                 df1_X_exp_fit$serial_day <- c(1:nrow(df1_X_exp_fit))
                 
                 #allow the use of a different baseline, user defined input
                 df1_X_exp_fit <- df1_X_exp_fit %>% filter(serial_day <= baseline)
                 
-                lm_out <- lm(data=df1_X_exp_fit,df1_X_exp_fit$log_10_events ~ df1_X_exp_fit$serial_day)
+                lm_out <- lm(data=df1_X_exp_fit, df1_X_exp_fit[[log_10_events]] ~ df1_X_exp_fit$serial_day)
                 
                 data_results_list$lm_out <- lm_out
                 
                 #update the df1_X component of the output list?  Leave any 0 value in the df?
                 
                 #should make a prediction for the NA values-- find the value and insert
-                cchart_df <- data.frame(df1_X_exp_fit[!is.na(df1_X_exp_fit$log_10_events),c("dateRep","serial_day","events","log_10_events")],
+                cchart_df <- data.frame(df1_X_exp_fit[!is.na(df1_X_exp_fit[[log_10_events]]),
+                                                      c("dateRep","serial_day", event_name, log_10_events)],
                                         lm_out$residuals,c(NA,diff(lm_out$residuals)),lm_out$fitted.values)
                 
                 names(cchart_df)[5] <- "differences"
@@ -378,7 +384,7 @@ make_location_data <- function(data,
                 
                 cchart_df$LCL <- lm_out$fitted.values - 3.14*MedMR
                 
-                cchart_df$stage_data <- df1_X_exp_fit[!is.na(df1_X_exp_fit$log_10_events),] %>% pull(stage_data)
+                cchart_df$stage_data <- df1_X_exp_fit[!is.na(df1_X_exp_fit[[log_10_events]]),] %>% pull(stage_data)
                 
                 df_exp_fit <- cchart_df
                 
@@ -396,13 +402,13 @@ make_location_data <- function(data,
                  #I should check for reported 0 events in this epoch just like in stage 3
                  df1_X_post_fit$events_nudge <- unlist(lapply(df1_X_post_fit$events_nudge,zero_NA))
                  
-                 df1_X_post_fit$log_10_events <- log10(df1_X_post_fit$events_nudge)
+                 df1_X_post_fit[[log_10_events]] <- log10(df1_X_post_fit$events_nudge)
                  
                  check_predicted_value <- lm_out$coefficients[1]+ lm_out$coefficients[2]*df1_X_post_fit$serial_day
                  
                  stage_data <- df1_X_post_fit %>% pull(stage_data)
                  
-                 df_post_fit_out <- cbind.data.frame(df1_X_post_fit[,c("dateRep","serial_day","events","log_10_events")],
+                 df_post_fit_out <- cbind.data.frame(df1_X_post_fit[,c("dateRep","serial_day", event_name, log_10_events)],
                                                   rep(NA,nrows_post_fit),
                                                   rep(NA,nrows_post_fit),
                                                   check_predicted_value,
@@ -463,6 +469,7 @@ make_location_data <- function(data,
 make_charts <- function(location_use,
                         buffer,
                         make_data,
+                        event_name,
                         title1,
                         caption_use,
                         constrain_y_axis){
@@ -501,12 +508,13 @@ make_charts <- function(location_use,
     
   } else if(is.na(exp_growth_date)) { #if there is no exponential growth, define plots we can make
     
-    index_Provost <- min(which(cumsum(replace_na(df_no_fit$events,0)) >=8),na.rm=TRUE)
+    index_Provost <- min(which(cumsum(replace_na(df_no_fit[[event_name]],0)) >=8),na.rm=TRUE)
   
         if(nrow(df_no_fit) < index_Provost) {
           #p_out1 is simple plot of points in time order, p_out2 is empty list
           p_out1 <- ggplot(data=df_no_fit,
-                           aes(x=dateRep,y=events))+
+                           aes_string(x = 'dateRep',
+                                      y = event_name))+
             theme_bw()+
             geom_point(size=rel(2.5))+
             labs(title = title1)+
@@ -517,7 +525,7 @@ make_charts <- function(location_use,
             #theme(axis.title.y=element_text(size=rel(1),angle=0,vjust=0.5))+
             theme(axis.text.y=element_text(size=rel(1.5)))+
             theme(axis.text.x=element_text(size=rel(1.5)))+
-            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$events,na.rm=TRUE)))
+            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit[[event_name]], na.rm=TRUE)))
             
             
           
@@ -526,7 +534,8 @@ make_charts <- function(location_use,
           message_out <- "Series too short to create a c-chart"
       
         } else  {p_out1 <- ggplot(data=df_no_fit,
-                                  aes(x=dateRep,y=events))+
+                                  aes_string(x = 'dateRep',
+                                             y = event_name))+
                             theme_bw()+
                             geom_point(size=rel(3.0))+
                             geom_line()+
@@ -542,7 +551,7 @@ make_charts <- function(location_use,
                             theme(axis.text.x=element_text(size=rel(1.5)))+
                             geom_hline(yintercept=c_chart_CL)+
                             geom_hline(yintercept=c_chart_UCL,linetype="dashed")+
-                            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$events,na.rm=TRUE)))
+                            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit[[event_name]],na.rm=TRUE)))
                             
         
                 p_out2 <- list()
@@ -552,7 +561,9 @@ make_charts <- function(location_use,
   }  else if(nrow(df_fit)==0) {
     #now plot c chart with extra points df_fit needs a minimum of five records with non-zero events
           p_out1 <- ggplot(data=df_no_fit,
-                           aes(x=dateRep,y=events,shape=stage_data))+
+                           aes_string(x = 'dateRep',
+                                      y = event_name,
+                                      shape = 'stage_data'))+
             theme_bw()+
             geom_point(size=rel(3.0))+
             geom_line()+
@@ -569,7 +580,7 @@ make_charts <- function(location_use,
             #theme(axis.title.y=element_text(size=rel(1),angle=0,vjust=0.5))+
             theme(axis.text.y=element_text(size=rel(1.5)))+
             theme(axis.text.x=element_text(size=rel(1.5)))+
-            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$events,na.rm=TRUE)))+
+            scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit[[event_name]], na.rm=TRUE)))+
             theme(legend.position = c(0.05, 0.95),
                   legend.justification = c("left", "top"))
           
@@ -583,7 +594,8 @@ make_charts <- function(location_use,
       #alternatively, compute 95% confidence interval and require CI for slope to have lower point > 0
       # conf_int_slope <- confint(lm_fit,'df1_X_exp_fit$serial_day',level= 0.95)[1]
       p_out1 <- ggplot(data=df_no_fit,
-                         aes(x=dateRep,y=events))+
+                         aes_string(x = 'dateRep',
+                                    y = event_name))+
                 theme_bw()+
                 geom_point(size=rel(3.0))+
                 geom_line()+
@@ -599,7 +611,7 @@ make_charts <- function(location_use,
                 theme(axis.text.x=element_text(size=rel(1.5)))+
                 geom_hline(yintercept=c_chart_CL)+
                 geom_hline(yintercept=c_chart_UCL,linetype="dashed")+
-                scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit$events,na.rm=TRUE)))
+                scale_y_continuous(breaks = integer_breaks(),limits=c(0,2*max(df_no_fit[[event_name]], na.rm=TRUE)))
                 
           
           p_out2 <- list()
@@ -608,7 +620,10 @@ make_charts <- function(location_use,
           
   } else {
         #exponential plots
-        p0 <- ggplot(data=df_fit,aes(x=dateRep,y=events,shape=stage_data))+
+        p0 <- ggplot(data=df_fit,
+                     aes_string(x = 'dateRep',
+                                y = event_name,
+                                shape='stage_data'))+
           theme_bw()+
           geom_point(size=rel(3.0),colour="blue")+
           geom_line()+
@@ -641,7 +656,10 @@ make_charts <- function(location_use,
         end_date <- exp_growth_date - 1
         
         p_out1 <- p_out + geom_point(data=df_no_fit[df_no_fit$dateRep < exp_growth_date,],
-                                     aes(x=dateRep,y=events,shape=stage_data))+
+                                     aes_string(
+                                       x = 'dateRep',
+                                       y = event_name,
+                                       shape = 'stage_data'))+
           geom_segment(aes(x=start_date, xend=end_date, y=c_chart_CL, yend=c_chart_CL))+
           geom_segment(aes(x=start_date, xend=end_date, y=c_chart_UCL, yend=c_chart_UCL),linetype="dashed")+
           xlim(min(df_no_fit$dateRep),max(df_fit$dateRep))+
@@ -652,14 +670,17 @@ make_charts <- function(location_use,
         
         if (constrain_y_axis) {
           p_out1 <- p_out1 + scale_y_continuous(
-            limits = c(0, 2*max(df_fit$events, na.rm = TRUE))
+            limits = c(0, 2*max(df_fit[[event_name]], na.rm = TRUE))
           )
         }   
         
         #retrict to the values used in the linear fit to plot the log chart
         #df_cchart1 <- df_cchart %>% filter(serial_day <= baseline1)
         
-        p_out2 <- ggplot(data=df_fit,aes(x=dateRep,y=log_10_events,shape=stage_data))+
+        p_out2 <- ggplot(data=df_fit,aes_string(
+          x = 'dateRep',
+          y = paste0('log_10_', event_name),
+          shape = 'stage_data'))+
           theme_bw()+
           
           geom_line(data=df_fit,aes(x=dateRep,y=lm_out.fitted.values))+

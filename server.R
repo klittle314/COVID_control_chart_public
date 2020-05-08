@@ -47,9 +47,9 @@ shinyServer(function(input, output, session) {
           
             upload_confirm <- NULL
             
-        } else if (!all(c('date', 'cases', 'deaths', 'location') %in% colnames(upload_data()))) {
+        } else if (!all(c('date', 'location') %in% colnames(upload_data()))) {
             
-            missing_cols <- setdiff(c('date', 'cases', 'deaths', 'location'), colnames(upload_data()))
+            missing_cols <- setdiff(c('date', 'location'), colnames(upload_data()))
             msg <- paste0('Columns missing from CSV file: ', paste0(missing_cols, collapse = ', '))
             
             upload_confirm <- NULL
@@ -60,6 +60,12 @@ shinyServer(function(input, output, session) {
           
             upload_confirm <- NULL
           
+        } else if (!any(sapply(upload_data(), class) %in% c('integer', 'numeric'))) {
+          
+            msg <- 'No numeric columns detected. Please add numeric columns.'
+            
+            upload_confirm <- NULL
+            
         } else {
             
             upload_confirm <- renderUI({
@@ -95,12 +101,14 @@ shinyServer(function(input, output, session) {
     observeEvent(input$upload_confirm, {
         req(upload_data())
         
-        data_add <- upload_data()[c('date', 'cases', 'deaths', 'location')]
-        colnames(data_add) <- c('dateRep', 'cases', 'deaths', 'countriesAndTerritories')
+        numeric_cols <- colnames(upload_data())[sapply(upload_data(), class) %in% c('numeric', 'integer')]
+          
+        data_add <- upload_data()[c('date', 'location', numeric_cols)]
+        colnames(data_add) <- c('dateRep', 'countriesAndTerritories', numeric_cols)
         
         data_add$dateRep <- as.Date(data_add$dateRep, format = '%m/%d/%Y')
         
-        data_add <- rbind(isolate(df_upload()), data_add)
+        data_add <- dplyr::bind_rows(isolate(df_upload()), data_add)
         
         data_add <- unique(data_add)
         
@@ -112,6 +120,8 @@ shinyServer(function(input, output, session) {
           choices = c(data_choices,
                       'User-uploaded data'),
           selected = 'User-uploaded data')
+        
+        updateSelectInput
 
         output$upload_confirm <- renderUI({
             list(
@@ -139,6 +149,22 @@ shinyServer(function(input, output, session) {
         if (input$data_source == 'Country-level ECDC data')           df_country
         else if (input$data_source == 'US state-level NY Times data') df_state
         else if (input$data_source == 'User-uploaded data')           df_upload()
+    })
+    
+    event_name_choices <- reactive({
+      req(display_data())
+      
+      setdiff(colnames(display_data()), c('dateRep', 'countriesAndTerritories'))
+    })
+    
+    observe({
+      req(event_name_choices())
+      
+      updateSelectInput(
+        session = session,
+        inputId = 'event_name',
+        choices = event_name_choices(),
+        selected = event_name_choices()[1])
     })
     
     locations <- reactive({
@@ -178,7 +204,8 @@ shinyServer(function(input, output, session) {
     make_data <- reactive({
         req(display_data(),
             locations(),
-            input$choose_location %in% locations())
+            input$choose_location %in% locations(),
+            input$event_name)
        
         location_use <- input$choose_location
         data1 <- display_data()
@@ -187,6 +214,7 @@ shinyServer(function(input, output, session) {
         start_date_user <- input$start_date
         
         list_use <- make_location_data(data=data1,
+                                       event_name = input$event_name,
                                        location_name=location_use,
                                        buffer_days=buffer,
                                        baseline=baseline1,
@@ -202,7 +230,7 @@ shinyServer(function(input, output, session) {
       location_use <- input$choose_location
       buffer <- input$buffer
       baseline1 <- input$baseline_n
-      title1 <- paste0(location_use," Daily Reported events")
+      title1 <- paste0(location_use, " Daily Reported ", input$event_name)
       caption_use <- control_chart_caption()
       constrain_y_axis <- input$constrain_y_axis
       
@@ -217,7 +245,9 @@ shinyServer(function(input, output, session) {
     
       
       chart_list <- make_charts(location_use=location_use,buffer=buffer,
-                                make_data=make_data,title1=title1,caption_use=caption_use,
+                                make_data=make_data,
+                                event_name = input$event_name,
+                                title1=title1,caption_use=caption_use,
                                 constrain_y_axis = constrain_y_axis)
       
       #contents of chart_list:  message_out, p_out1, p_out2 
@@ -229,7 +259,7 @@ shinyServer(function(input, output, session) {
         
         req(control_chartNEW())
         
-        if(control_chartNEW()$message_out != "No reported events") {
+        if(control_chartNEW()$message_out != paste0("No reported ", input$event_name)) {
               print(control_chartNEW()$p_out1)
         }
     })
@@ -256,6 +286,9 @@ shinyServer(function(input, output, session) {
     )
     
     data_for_table <- reactive({
+      
+      event_name <- input$event_name
+      
       #make the stuff that I want to use goes here
       message_out <- control_chartNEW()$message_out
       if(message_out %in% use_raw_table_messages) {
@@ -264,10 +297,10 @@ shinyServer(function(input, output, session) {
         names(df_out) <- c("Date Reported", "Cases","Deaths")
         
       } else if(message_out %in% use_new_expo_table_messages) {
-        df_out <- make_data()$df_exp_fit[,c("dateRep","serial_day","events",
+        df_out <- make_data()$df_exp_fit[,c("dateRep","serial_day", input$event_name,
                                             "predict","LCL_anti_log","UCL_anti_log")]
-        names(df_out) <- c("Date Reported","Serial Day","events","Predicted events","Lower Limit","Upper Limit")
-        df_out$'Predicted events' <- round(df_out$'Predicted events',0)
+        names(df_out) <- c("Date Reported","Serial Day", event_name, paste0("Predicted ", event_name),"Lower Limit","Upper Limit")
+        df_out[[paste0('Predicted ', event_name)]] <- round(df_out[[paste0('Predicted ', event_name)]],0)
         df_out$'Lower Limit' <- round(df_out$'Lower Limit',0)
         df_out$'Upper Limit' <- round(df_out$'Upper Limit',0)
         

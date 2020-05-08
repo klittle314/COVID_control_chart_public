@@ -35,6 +35,8 @@ if (file.exists(data_file_country)) {
   df_country$dateRep <- as.Date(df_country$dateRep, format = '%d/%m/%Y')
   country_names <- unique(df_country$countriesAndTerritories)
   
+  df_country[c('day', 'month', 'year', 'geoId', 'countryterritoryCode', 'popData2018', 'continentExp')] <- NULL
+  
   data_choices <- c('Country-level ECDC data', data_choices)
   data_selected <- 'Country-level ECDC data'
   location_choices <- sort(country_names)
@@ -55,6 +57,9 @@ if (file.exists(data_file_state)) {
   state_names <- unique(df_state$state)
   #rename state variable to countriesAndTerritories to keep code consistent with nations data set
   colnames(df_state) <- c('dateRep', 'countriesAndTerritories', 'fips', 'cum_cases', 'cum_deaths')
+  
+  df_state$fips <- NULL
+  
   #compute deaths in the state table, reported are cum deaths--have to work by state
  df_state <- df_state %>%group_by(countriesAndTerritories) %>% 
     mutate(deaths=make_vec(cum_deaths))
@@ -88,6 +93,3 @@ use_raw_table_messages <- c('Series too short to create a c-chart',
 
 use_new_expo_table_messages <- c('c-chart and exponential fit')
 
-#use cases instead of deaths
-df_state$events <- df_state$cases
-df_country$events <- df_country$cases
