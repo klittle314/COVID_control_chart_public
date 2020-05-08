@@ -91,7 +91,9 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                        tags$li('location'),
                      br(),
                      helpText('You may include multiple locations in a single file; the locations will appear in the location drop-down box'),
-                
+                     
+                     helpText('The file should give new daily reported daily deaths (not cumulative).  We will generalize to allow other events soon.'),
+                     
                      helpText('The current code will not yet handle NA values in the death series.  Zero values are fine.')
                      ),
                      
