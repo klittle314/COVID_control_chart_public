@@ -92,7 +92,7 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                      br(),
                      helpText('You may include multiple locations in a single file; the locations will appear in the location drop-down box'),
                      
-                     helpText('The file should give new daily reported daily deaths (not cumulative).  We will generalize to allow other events soon.'),
+                     helpText('The file should contain new daily reported daily deaths (not cumulative).  We will generalize to allow other events soon.'),
                      
                      helpText('The current code will not yet handle NA values in the death series.  Zero values are fine.')
                      ),
@@ -103,6 +103,12 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                href = 'https://support.office.com/en-us/article/Import-or-export-text-txt-or-csv-files-5250ac4c-663c-47ce-937b-339e391393ba',
                                target = '_blank'),
                         'for help creating a CSV file in Excel.'),
+                     
+                     h5('Click',
+                        tags$a('here',
+                               href = 'https://github.com/klittle314/COVID_control_chart_public/blob/master/test_data/France_test1_resort_dates.csv',
+                               target = 'blank'),
+                        'for a sample CSV file.'),
                      
                      tags$br(),
                      
