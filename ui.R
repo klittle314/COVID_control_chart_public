@@ -48,7 +48,12 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                   'to learn more.'),
                                
                                 
-                               
+                               h6('Note that the New York Times changed the definition of deaths to include probable deaths starting in early May,
+                                  as explained ',
+                                    tags$a('here',
+                                      href="https://github.com/nytimes/covid-19-data/blob/master/PROBABLE-CASES-NOTE.md",
+                                      target = 'blank'),
+                                      '.'),
                                
                                 
                                 #helpText("Questions? Contact Kevin Little, Ph.D."),
@@ -70,7 +75,7 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                     span("Created by "),
                                     a("Kevin Little", href = "mailto:klittle@iecodesign.com"),
 
-                                    span("updated 25 April 2020 4:15pm U.S. CDT"),
+                                    span("updated 8 May 2020 7:00am U.S. CDT"),
 
                                     br(), br()
                                 
