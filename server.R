@@ -154,7 +154,7 @@ shinyServer(function(input, output, session) {
     event_name_choices <- reactive({
       req(display_data())
       
-      setdiff(colnames(display_data()), c('dateRep', 'countriesAndTerritories'))
+      setdiff(colnames(display_data()), c('dateRep', 'countriesAndTerritories','cum_cases', 'cum_deaths'))
     })
     
     observe({
@@ -206,7 +206,7 @@ shinyServer(function(input, output, session) {
             locations(),
             input$choose_location %in% locations(),
             input$event_name)
-       
+       browser()
         location_use <- input$choose_location
         data1 <- display_data()
         buffer <- input$buffer
