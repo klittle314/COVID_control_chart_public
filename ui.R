@@ -192,7 +192,7 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                       helpText(h6("If there are fewer days in the data series than the maximum, app calculates using all the data.")),
                                      #br(),
                                       
-                                      # Checkbox that if checked, constrains control chart y-axis to the range of observed death counts, instead of the 
+                                      # Checkbox that if checked, constrains control chart y-axis to the range of observed event counts, instead of the 
                                       # range of the projections. Helps view data series for countries with enough data that projections dominate
                                       # the observed series.
                                       checkboxInput(
