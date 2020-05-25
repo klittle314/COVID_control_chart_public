@@ -240,7 +240,11 @@ create_stages_Provost <- function(data1, event_name, date_cutoffs, baseline){
       stage2 <- stage2 %>% filter(dateRep < date_cutoffs$c_chart_signal)
     }
     
-    stage2$stage <- paste0(event_name, ' observed before c-chart signal')
+    #Check Vermont Case:  start date 4/16 leads to a c-chart with signal on the first day of the death series.  If
+    #condition is not checked that stage 2 df has data, we get an error
+    if(nrow(stage2) > 0) {
+        stage2$stage <- paste0(event_name, ' observed before c-chart signal')
+    }
     
     data_stages$stage2 <- stage2
     
@@ -330,7 +334,7 @@ make_location_data <- function(data,
   date_cutoffs <- find_start_date_Provost(data = df1_X, event_name = event_name, location_name = location_name, start_date = start_date)
   
   data_results_list$date_cutoffs <- date_cutoffs
-  #browser()
+  
   df1_X <- create_stages_Provost(data=df1_X,
                                  event_name = event_name,
                                  date_cutoffs=date_cutoffs,
@@ -356,7 +360,7 @@ make_location_data <- function(data,
       #exp_fit_min_length is the shortest number of records to use for the log of events and linear fit
       exp_fit_min_length <- 5
       
-      #browser()
+     
       #Build the linear model if there are sufficient records and calculate the anti logs of prediction and limits
        if(!is.na(date_cutoffs$c_chart_signal) )  { 
           df1_X_exp_fit <- df1_X %>% filter(stage_data=='Exponential growth and fit')
