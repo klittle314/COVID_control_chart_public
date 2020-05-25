@@ -102,7 +102,10 @@ function find_start_date_Provost
  function create_stages_Provost
   
   *min_length_chart*: set to 5; the minimum number of days with events > 0 to use in computing the exponential fit (linear fit based on log10(deaths).
-  
+
+### Notes on computations related to the c-chart
+The function find_start_date_Provost calculates the c-chart center line and upper control limit.  As described above, the c-chart calculations are based on several other parameters.   The c-chart calculations require at least 8 non-zero events; the maximum number of records used for the c-chart calculations is *cc_length*, set to 20.  As the find_start_date_Provost function iterates through the records, the calculation stops as soon as a special cause signal is detected (either a single point above the upper control limit or a series of eight consecutive values above the center line).  Thus, if you vary the starting date of the analysis, the number of points used in the c-chart calculation can vary depending on whether the initial trial records include any special cause signals.  We do not revise calculations excluding points corresponding to special cause signals.
+
 ### Notes on computations related to the fit of the regression line
 #### Calculation of the control chart limits using residuals from linear regression on log10 deaths
 The code uses the median moving range to estimate 'sigma-hat' in the calculation of the individuals control chart.  Hence the multiplier 3.14 to compute the upper and lower control limits.  The median moving range is more robust to one or two large point-to-point ranges relative to the average moving range.  Usually, use of the average moving range requires two stages:  examine moving ranges to determine if there are any that are unusually large on a chart of moving ranges; discard any ranges that exceed the upper control limit on the range chart, and recalculate the limits on the individuals chart.  We chose to use the median approach to simplify the derivation of the individuals control chart limits.
