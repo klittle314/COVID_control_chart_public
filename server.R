@@ -206,13 +206,13 @@ shinyServer(function(input, output, session) {
             locations(),
             input$choose_location %in% locations(),
             input$event_name)
-      
+        
         location_use <- input$choose_location
         data1 <- display_data()
         buffer <- input$buffer
         baseline1 <- input$baseline_n
         start_date_user <- input$start_date
-        #browser()
+       
         list_use <- make_location_data(data=data1,
                                        event_name = input$event_name,
                                        location_name=location_use,
@@ -288,7 +288,7 @@ shinyServer(function(input, output, session) {
     data_for_table <- reactive({
       
       event_name <- input$event_name
-      #browser()
+     
       #make the stuff that I want to use goes here
       message_out <- control_chartNEW()$message_out
       if(message_out %in% use_raw_table_messages) {
