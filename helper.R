@@ -330,7 +330,7 @@ make_location_data <- function(data,
   date_cutoffs <- find_start_date_Provost(data = df1_X, event_name = event_name, location_name = location_name, start_date = start_date)
   
   data_results_list$date_cutoffs <- date_cutoffs
-   
+  #browser()
   df1_X <- create_stages_Provost(data=df1_X,
                                  event_name = event_name,
                                  date_cutoffs=date_cutoffs,
@@ -356,7 +356,7 @@ make_location_data <- function(data,
       #exp_fit_min_length is the shortest number of records to use for the log of events and linear fit
       exp_fit_min_length <- 5
       
-      
+      #browser()
       #Build the linear model if there are sufficient records and calculate the anti logs of prediction and limits
        if(!is.na(date_cutoffs$c_chart_signal) )  { 
           df1_X_exp_fit <- df1_X %>% filter(stage_data=='Exponential growth and fit')
@@ -410,7 +410,7 @@ make_location_data <- function(data,
                  
                  df1_X_post_fit$serial_day <- seq(from=start_index, length.out=nrows_post_fit,by=1)
                  
-                 #I should check for reported 0 events in this epoch just like in stage 3
+                 #I should check for reported 0 events in this epoch just like in stage 3 ONLY IF FITTING A LOG MODEL
                  df1_X_post_fit$events_nudge <- unlist(lapply(df1_X_post_fit$events_nudge,zero_NA))
                  
                  df1_X_post_fit[[log_10_events]] <- log10(df1_X_post_fit$events_nudge)
@@ -426,6 +426,16 @@ make_location_data <- function(data,
                                                   check_predicted_value + 3.14*MedMR,
                                                   check_predicted_value - 3.14*MedMR,
                                                   stage_data,stringsAsFactors=FALSE)
+                 # #25 May 2020 Only show predicted values for the stage where we fit the predicted values
+                 # df_post_fit_out <- cbind.data.frame(df1_X_post_fit[,c("dateRep","serial_day", event_name)],
+                 #                                     rep(NA,nrows_post_fit),
+                 #                                     rep(NA,nrows_post_fit),
+                 #                                     rep(NA,nrows_post_fit),
+                 #                                     rep(NA,nrows_post_fit),
+                 #                                     rep(NA,nrows_post_fit),
+                 #                                     rep(NA,nrows_post_fit),
+                 #                                     stage_data,stringsAsFactors=FALSE)
+                 
                  
                  names(df_post_fit_out) <- names(df_exp_fit)
                  
@@ -440,18 +450,30 @@ make_location_data <- function(data,
                 
                 buffer_serial_day <- seq(from=serial_day_buffer_start,to=serial_day_buffer_start+buffer_days-1,by=1)
                 
+                #25 May 2020 omit predicted value from the buffer days
                 predicted_value <- lm_out$coefficients[1]+ lm_out$coefficients[2]*buffer_serial_day
-                
+
                 buffer_df <- cbind.data.frame(buffer_dates,
-                                              buffer_serial_day,
-                                              rep(NA,buffer_days),
-                                              rep(NA,buffer_days),
-                                              rep(NA,buffer_days),
-                                              rep(NA,buffer_days),
-                                              predicted_value,
-                                              predicted_value + 3.14*MedMR,
-                                              predicted_value - 3.14*MedMR,
-                                              rep(NA,buffer_days))
+                                               buffer_serial_day,
+                                               rep(NA,buffer_days),
+                                               rep(NA,buffer_days),
+                                               rep(NA,buffer_days),
+                                               rep(NA,buffer_days),
+                                               predicted_value,
+                                               predicted_value + 3.14*MedMR,
+                                               predicted_value - 3.14*MedMR,
+                                               rep(NA,buffer_days))
+                
+                   # buffer_df <- cbind.data.frame(buffer_dates,
+                   #                            buffer_serial_day,
+                   #                            rep(NA,buffer_days),
+                   #                            rep(NA,buffer_days),
+                   #                            rep(NA,buffer_days),
+                   #                            rep(NA,buffer_days),
+                   #                            rep(NA,buffer_days),
+                   #                            rep(NA,buffer_days),
+                   #                            rep(NA,buffer_days),
+                   #                            rep(NA,buffer_days))
                 
                 names(buffer_df) <- names(df_exp_fit)
                 

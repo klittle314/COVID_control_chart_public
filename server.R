@@ -288,7 +288,7 @@ shinyServer(function(input, output, session) {
     data_for_table <- reactive({
       
       event_name <- input$event_name
-      
+      browser()
       #make the stuff that I want to use goes here
       message_out <- control_chartNEW()$message_out
       if(message_out %in% use_raw_table_messages) {
