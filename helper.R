@@ -134,7 +134,8 @@ find_start_date_Provost <- function(data,
           #https://stackoverflow.com/questions/48551492/count-consecutive-true-values-within-each-block-separately
           # the next calculation will fail if there are NA values for events--the logic test in the 
           #previous line will return NAs in the logical vector x1 corresponding to NAs in test_series0
-          #
+          # x2 gives count the number of consecutive values that are above the CL: 
+          # take the vector x1 and given the levels provided by cumsum(!x1), then cumulate.
           x2 <- ave(x1, cumsum(!x1), FUN = cumsum)
           
         } else {
@@ -202,7 +203,7 @@ find_start_date_Provost <- function(data,
 #new function to label stages, MDEC created 4-7-2020 and modified to accept Provost starting rule
 create_stages_Provost <- function(data1, event_name, date_cutoffs, baseline){
   data_stages <- list()
- 
+  
   # if date_cutoffs$first_event is NA (no events), stage1 is the whole data.frame 
   first_event_date <- date_cutoffs$first_event
   
