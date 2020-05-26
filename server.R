@@ -206,20 +206,20 @@ shinyServer(function(input, output, session) {
             locations(),
             input$choose_location %in% locations(),
             input$event_name)
-      
+        
         location_use <- input$choose_location
         data1 <- display_data()
         buffer <- input$buffer
         baseline1 <- input$baseline_n
         start_date_user <- input$start_date
-        
+       
         list_use <- make_location_data(data=data1,
                                        event_name = input$event_name,
                                        location_name=location_use,
                                        buffer_days=buffer,
                                        baseline=baseline1,
                                        start_date=start_date_user)
-      
+       
         return(list_use)
     })
     
@@ -288,7 +288,7 @@ shinyServer(function(input, output, session) {
     data_for_table <- reactive({
       
       event_name <- input$event_name
-      
+     
       #make the stuff that I want to use goes here
       message_out <- control_chartNEW()$message_out
       if(message_out %in% use_raw_table_messages) {
@@ -298,11 +298,12 @@ shinyServer(function(input, output, session) {
         
       } else if(message_out %in% use_new_expo_table_messages) {
         df_out <- make_data()$df_exp_fit[,c("dateRep","serial_day", input$event_name,
-                                            "predict","LCL_anti_log","UCL_anti_log")]
-        names(df_out) <- c("Date Reported","Serial Day", event_name, paste0("Predicted ", event_name),"Lower Limit","Upper Limit")
+                                            "predict","LCL_anti_log","UCL_anti_log", "stage_data")]
+        names(df_out) <- c("Date Reported","Serial Day", event_name, paste0('Predicted ', event_name),'Lower Limit','Upper Limit', 'Stage')
         df_out[[paste0('Predicted ', event_name)]] <- round(df_out[[paste0('Predicted ', event_name)]],0)
         df_out$'Lower Limit' <- round(df_out$'Lower Limit',0)
         df_out$'Upper Limit' <- round(df_out$'Upper Limit',0)
+        
         
       } else {
         
