@@ -86,7 +86,7 @@ The core files are
 
 *defBuffer*:  the default number of days to add to the display on the plot(s) after the most recent date in the reported event series.  Set to 7 days.
 
-*defBaseline*:  the default number of days to use as the maximum number of records used in the exponential fit; however, the user may over-ride this choice by entering a number of days in the numeric input box 'Maximum days used to compute exponential growth line and limits'.  If the value for baseline days exceeds the available number of records, all available records are used.  Set to 20 days.
+*defBaseline*:  the default number of days to use as the maximum number of records used in the exponential fit; however, the user may over-ride this choice by entering a number of days in the numeric input box 'Maximum days used to compute exponential growth line and limits'.  If the value for baseline days exceeds the available number of records, all available records are used.  Set to 21 days.
 
 #### helper.R
 function find_start_date_Provost
