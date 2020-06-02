@@ -75,7 +75,7 @@ find_start_date_Provost <- function(data,
                                     start_date=start_date){
  
   df1_X <- data %>% filter(countriesAndTerritories == location_name) %>% arrange(dateRep)
-  
+ 
   Rule_shift <- NA  
   
   #bound the length of the calculations, no more than cc_length records used to compute center line and upper limit
