@@ -299,6 +299,12 @@ shinyServer(function(input, output, session) {
       } else if(message_out %in% use_new_expo_table_messages) {
         df_out <- make_data()$df_exp_fit[,c("dateRep","serial_day", input$event_name,
                                             "predict","LCL_anti_log","UCL_anti_log", "stage_data")]
+        
+          df_out$predict[df_out$stage_data != "Exponential growth and fit"] <- NA
+          df_out$LCL_anti_log[df_out$stage_data != "Exponential growth and fit"] <- NA
+          df_out$UCL_anti_log[df_out$stage_data != "Exponential growth and fit"] <- NA
+        
+        
         names(df_out) <- c("Date Reported","Serial Day", event_name, paste0('Predicted ', event_name),'Lower Limit','Upper Limit', 'Stage')
         df_out[[paste0('Predicted ', event_name)]] <- round(df_out[[paste0('Predicted ', event_name)]],0)
         df_out$'Lower Limit' <- round(df_out$'Lower Limit',0)
