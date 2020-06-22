@@ -26,7 +26,7 @@ location_selected <- NULL
 if (!file.exists(data_file_country)) {
   response_country <- try(httr::GET(url = "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv",
                                     authenticate(':', ':', type='ntlm'),
-                                    config(timeout = 10),
+                                    config(timeout = 20),
                                     write_disk(data_file_country, overwrite = TRUE)))
 }
 
@@ -46,7 +46,7 @@ if (file.exists(data_file_country)) {
 if (!file.exists(data_file_state)) {
   response_state <- try(httr::GET(url = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv',
                                   authenticate(':', ':', type='ntlm'),
-                                  config(timeout = 10),
+                                  config(timeout = 20),
                                   write_disk(data_file_state, overwrite = TRUE)))
 }
 
