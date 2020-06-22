@@ -286,7 +286,7 @@ shinyServer(function(input, output, session) {
     )
     
     data_for_table <- reactive({
-      
+    
       event_name <- input$event_name
      
       #make the stuff that I want to use goes here
@@ -296,18 +296,29 @@ shinyServer(function(input, output, session) {
         
         names(df_out) <- c("Date Reported", "Cases","Deaths")
         
+        index_pred <- which(df_out$stage_data)
+        
       } else if(message_out %in% use_new_expo_table_messages) {
         df_out <- make_data()$df_exp_fit[,c("dateRep","serial_day", input$event_name,
                                             "predict","LCL_anti_log","UCL_anti_log", "stage_data")]
-        
-          df_out$predict[df_out$stage_data != "Exponential growth and fit"] <- NA
-          df_out$LCL_anti_log[df_out$stage_data != "Exponential growth and fit"] <- NA
-          df_out$UCL_anti_log[df_out$stage_data != "Exponential growth and fit"] <- NA
+          index_exp_fit <- which.min(df_out$stage_data == "Exponential growth and fit")
+          #allow for input$buffer records to have exponential fit and limits to show in the table, else NA appear
+          #prevents huge numbers from appearing in the table for serial day 'far' from end of expo fit period.
+          index_check <- df_out$stage_data != "Exponential growth and fit" & df_out$serial_day >= index_exp_fit + input$buffer
+          
+          df_out$predict[index_check] <- NA
+          
+          df_out$LCL_anti_log[index_check] <- NA
+          
+          df_out$UCL_anti_log[index_check] <- NA
         
         
         names(df_out) <- c("Date Reported","Serial Day", event_name, paste0('Predicted ', event_name),'Lower Limit','Upper Limit', 'Stage')
+        
         df_out[[paste0('Predicted ', event_name)]] <- round(df_out[[paste0('Predicted ', event_name)]],0)
+        
         df_out$'Lower Limit' <- round(df_out$'Lower Limit',0)
+        
         df_out$'Upper Limit' <- round(df_out$'Upper Limit',0)
         
         
