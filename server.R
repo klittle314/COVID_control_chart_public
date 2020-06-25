@@ -299,12 +299,16 @@ shinyServer(function(input, output, session) {
         index_pred <- which(df_out$stage_data)
         
       } else if(message_out %in% use_new_expo_table_messages) {
+       # browser()
         df_out <- make_data()$df_exp_fit[,c("dateRep","serial_day", input$event_name,
                                             "predict","LCL_anti_log","UCL_anti_log", "stage_data")]
           index_exp_fit <- which.min(df_out$stage_data == "Exponential growth and fit")
           #allow for input$buffer records to have exponential fit and limits to show in the table, else NA appear
           #prevents huge numbers from appearing in the table for serial day 'far' from end of expo fit period.
           index_check <- df_out$stage_data != "Exponential growth and fit" & df_out$serial_day >= index_exp_fit + input$buffer
+          
+          #account for the buffer index values which have stage_date NA
+          index_check[is.na(index_check)] <- TRUE
           
           df_out$predict[index_check] <- NA
           
