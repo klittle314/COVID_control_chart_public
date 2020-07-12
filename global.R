@@ -35,7 +35,8 @@ if (file.exists(data_file_country)) {
   df_country$dateRep <- as.Date(df_country$dateRep, format = '%d/%m/%Y')
   country_names <- unique(df_country$countriesAndTerritories)
   
-  df_country[c('day', 'month', 'year', 'geoId', 'countryterritoryCode', 'popData2019', 'continentExp')] <- NULL
+  df_country[c('day', 'month', 'year', 'geoId', 'countryterritoryCode', 
+               'popData2019', 'continentExp', 'Cumulative_number_for_14_days_of_COVID-19_cases_per_100000')] <- NULL
   
   data_choices <- c('Country-level ECDC data', data_choices)
   data_selected <- 'Country-level ECDC data'
