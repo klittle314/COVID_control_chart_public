@@ -201,6 +201,7 @@ shinyServer(function(input, output, session) {
     })
     
     #make a list that has a frame of the original data, a frame to construct the limit chart, and the linear model
+    
     make_data <- reactive({
         req(display_data(),
             locations(),
@@ -212,7 +213,7 @@ shinyServer(function(input, output, session) {
         buffer <- input$buffer
         baseline1 <- input$baseline_n
         start_date_user <- input$start_date
-       
+        #browser()
         list_use <- make_location_data(data=data1,
                                        event_name = input$event_name,
                                        location_name=location_use,
@@ -244,10 +245,12 @@ shinyServer(function(input, output, session) {
       # c_chart_UCL <- make_data()$date_cutoffs$UCL
     
       
-      chart_list <- make_charts(location_use=location_use,buffer=buffer,
+      chart_list <- make_charts(location_use=location_use,
+                                buffer=buffer,
                                 make_data=make_data,
                                 event_name = input$event_name,
-                                title1=title1,caption_use=caption_use,
+                                title1=title1,
+                                caption_use=caption_use,
                                 constrain_y_axis = constrain_y_axis)
       
       #contents of chart_list:  message_out, p_out1, p_out2 
@@ -288,15 +291,15 @@ shinyServer(function(input, output, session) {
     data_for_table <- reactive({
     
       event_name <- input$event_name
-     
+     #browser()
       #make the stuff that I want to use goes here
       message_out <- control_chartNEW()$message_out
       if(message_out %in% use_raw_table_messages) {
-        df_out <- make_data()$df1_X[,c("dateRep","cases","deaths")]
+        df_out <- make_data()$df1_X[,c("dateRep",input$event_name,"stage_data")]
         
-        names(df_out) <- c("Date Reported", "Cases","Deaths")
-        
-        index_pred <- which(df_out$stage_data)
+        names(df_out) <- c("Date Reported", input$event_name, "Initial Stage")
+        #browser()
+        #index_pred <- which(df_out$Stage %in%)
         
       } else if(message_out %in% use_new_expo_table_messages) {
        # browser()
