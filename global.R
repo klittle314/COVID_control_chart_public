@@ -71,7 +71,7 @@ if (file.exists(data_file_state)) {
   data_choices <- c('US state-level NY Times data', data_choices)
   data_selected <- 'US state-level NY Times data'
   location_choices <- sort(state_names)
-  location_selected <- 'New York'
+  location_selected <- 'California'
 }
 
 # delete old country/state data files that aren't necessary - not a big deal locally,

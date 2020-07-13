@@ -24,17 +24,17 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
                                    tags$a('here', 
                                           href = 'http://www.ihi.org/Topics/COVID-19/Documents/IHI-COVID-19-Data-Dashboard-Introduction-and-Methodology.pdf',
                                           target = '_blank'),
-                                   'to read about the method details on the',
-                                   tags$b('Insitute for Healthcare Improvement'),
+                                   'to see a related application of the method on the',
+                                   tags$b('Institute for Healthcare Improvement'),
                                    'website.'),
                                 
                                 h5('Click',
                                    tags$a('here', 
-                                          href = 'https://www.usnews.com/news/healthiest-communities/articles/2020-03-26/coronavirus-pandemic-reaching-critical-tipping-point-in-america-analysis-shows',
+                                          href = 'https://academic.oup.com/intqhc/article/doi/10.1093/intqhc/mzaa069/5863166',
                                           target = '_blank'),
-                                   'for an introduction to the method in an article from',
-                                   tags$b('U.S. News and World Report'),
-                                   '26 March 2020.'),
+                                   'for a description of the method in an article ',
+                                   tags$b('International Journal for Quality In Health Care'),
+                                   ' published 26 June 2020.'),
                                 
                                 
                                 
@@ -77,7 +77,7 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
 
 
 
-                                    span("updated 25 June 2020 9:15am U.S. CDT"),
+                                    span("updated 12 July 2020 9:15pm U.S. CDT"),
 
 
                                     br(), br()
