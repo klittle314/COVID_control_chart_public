@@ -77,7 +77,7 @@ shinyUI(navbarPage("COVID-19 Control Chart Application",
 
 
 
-                                    span("updated 12 July 2020 9:15pm U.S. CDT"),
+                                    span("updated 13 July 2020 9:15pm U.S. CDT"),
 
 
                                     br(), br()
