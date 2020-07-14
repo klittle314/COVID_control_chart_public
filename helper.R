@@ -254,11 +254,15 @@ create_stages_Provost <- function(data1, event_name, date_cutoffs, baseline){
   # If there has been a c-chart signal observed, stage 3 begins with that date and is at 
   # least 5 subsequent days with events > 0, up to 20 (determined by value of baseline argument).
   min_length_chart <- 5
-  
+  #browser()
   if(!is.na(date_cutoffs$c_chart_signal)) {
     stage3 <- data1 %>% filter(dateRep >= date_cutoffs$c_chart_signal) 
     
-    stage3_check <- stage3 %>% filter(!!event_name > 0)
+   #need to force event_name to be recognized as a string that filter can interpret as a column name and limit to the baseline length
+   #the bug was identified by looking at Wyoming death series 12 July 2020:  there were only 2 non zero deaths in the baseline period after
+   #initial cchart signal.  The reference to event_name in the filter statement was originally written as !!event_name but this 
+   #formulation did not seem to work.   Needed to force conversion by explicit call to sym in rlang package.
+      stage3_check <- head(stage3,baseline) %>% filter((!!sym(event_name)) > 0)
     
     #stage3_short indicates whether or not there are sufficient records to fit the exponential after the c-chart signal
     stage3_short <- FALSE
@@ -335,6 +339,7 @@ make_location_data <- function(data,
   
   data_results_list$date_cutoffs <- date_cutoffs
   
+ 
   df1_X <- create_stages_Provost(data=df1_X,
                                  event_name = event_name,
                                  date_cutoffs=date_cutoffs,
@@ -360,12 +365,13 @@ make_location_data <- function(data,
       #exp_fit_min_length is the shortest number of records to use for the log of events and linear fit
       exp_fit_min_length <- 5
       
-     
+     #
       #Build the linear model if there are sufficient records and calculate the anti logs of prediction and limits
        if(!is.na(date_cutoffs$c_chart_signal) )  { 
           df1_X_exp_fit <- df1_X %>% filter(stage_data=='Exponential growth and fit')
           
           #check for sufficient stage 3 values to calculate the exponential growth control limits
+          
           
           if(nrow(df1_X_exp_fit)>= exp_fit_min_length) {
                 #replace any events_nudge value = 0 with NA
